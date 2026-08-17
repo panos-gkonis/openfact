@@ -13,12 +13,14 @@ module Facter
 
         def post_resolve(fact_name, _options)
           log.debug('reading Gce metadata')
-          @fact_list.fetch(fact_name) { read_facts(fact_name) }
+          @fact_list.fetch(fact_name) { read_fact(fact_name) }
         end
 
-        def read_facts(fact_name)
+        def read_fact(fact_name)
+          return unless %i[metadata metadata_available].include?(fact_name)
+
           @fact_list[:metadata] = query_for_metadata
-          @fact_list[fact_name]
+          @fact_list[:metadata_available] = !@fact_list[:metadata].nil?
         end
 
         def query_for_metadata

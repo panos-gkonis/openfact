@@ -3,6 +3,7 @@
 describe Facter::Resolvers::Gce do
   let(:gce_metadata_url) { 'http://metadata.google.internal/computeMetadata/v1/?recursive=true&alt=json' }
   let(:gce_url_headers) { { 'Metadata-Flavor': 'Google', Accept: 'application/json' } }
+  let(:http_response_body) { load_fixture('gce').read }
 
   before do
     allow(Facter::Util::Resolvers::Http).to receive(:get_request)
@@ -149,6 +150,14 @@ describe Facter::Resolvers::Gce do
 
         expect(result).to eq(value)
       end
+
+      it 'sets metadata availability without another request' do
+        Facter::Resolvers::Gce.resolve(:metadata)
+
+        expect(Facter::Resolvers::Gce.resolve(:metadata_available)).to be(true)
+        expect(Facter::Util::Resolvers::Http).to have_received(:get_request)
+          .with(gce_metadata_url, gce_url_headers, {}, false).once
+      end
     end
   end
 
@@ -168,5 +177,40 @@ describe Facter::Resolvers::Gce do
     end
 
     it_behaves_like 'check GCE resolver called with metadata'
+  end
+
+  describe 'metadata availability' do
+    before do
+      allow(Facter::Util::Resolvers::Http).to receive(:get_request)
+        .with(gce_metadata_url, gce_url_headers, {}, false).and_return(availability_output)
+    end
+
+    context 'when the metadata service responds' do
+      let(:availability_output) { http_response_body }
+
+      it 'returns true and caches the result' do
+        2.times { Facter::Resolvers::Gce.resolve(:metadata_available) }
+
+        expect(Facter::Resolvers::Gce.resolve(:metadata_available)).to be(true)
+        expect(Facter::Util::Resolvers::Http).to have_received(:get_request)
+          .with(gce_metadata_url, gce_url_headers, {}, false).once
+      end
+
+      it 'still fully resolves metadata after the availability check' do
+        Facter::Resolvers::Gce.resolve(:metadata_available)
+
+        expect(Facter::Resolvers::Gce.resolve(:metadata)).not_to be_nil
+        expect(Facter::Util::Resolvers::Http).to have_received(:get_request)
+          .with(gce_metadata_url, gce_url_headers, {}, false).once
+      end
+    end
+
+    context 'when the metadata service does not respond' do
+      let(:availability_output) { '' }
+
+      it 'returns false' do
+        expect(Facter::Resolvers::Gce.resolve(:metadata_available)).to be(false)
+      end
+    end
   end
 end

@@ -6,12 +6,12 @@ describe Facts::Linux::Cloud::Provider do
 
     context 'when on hyperv' do
       before do
-        allow(Facter::Resolvers::Az).to receive(:resolve).with(:metadata).and_return(value)
+        allow(Facter::Resolvers::Az).to receive(:resolve).with(:metadata_available).and_return(value)
         allow(Facter::Util::Facts::Posix::VirtualDetector).to receive(:platform).and_return('hyperv')
       end
 
       context 'when az_metadata exists' do
-        let(:value) { { 'some' => 'fact' } }
+        let(:value) { true }
 
         it 'returns azure as cloud.provider' do
           expect(fact.call_the_resolver).to be_an_instance_of(Facter::ResolvedFact).and \
@@ -20,7 +20,7 @@ describe Facts::Linux::Cloud::Provider do
       end
 
       context 'when az_metadata does not exist' do
-        let(:value) { {} }
+        let(:value) { false }
 
         it 'returns nil' do
           expect(fact.call_the_resolver).to be_an_instance_of(Facter::ResolvedFact).and \
@@ -42,12 +42,12 @@ describe Facts::Linux::Cloud::Provider do
 
     describe 'when on kvm' do
       before do
-        allow(Facter::Resolvers::Ec2).to receive(:resolve).with(:metadata).and_return(value)
+        allow(Facter::Resolvers::Ec2).to receive(:resolve).with(:metadata_available).and_return(value)
         allow(Facter::Util::Facts::Posix::VirtualDetector).to receive(:platform).and_return('kvm')
       end
 
       describe 'Ec2 data exists and aws fact is set' do
-        let(:value) { { 'some' => 'fact' } }
+        let(:value) { true }
 
         it 'Testing things' do
           expect(fact.call_the_resolver).to be_an_instance_of(Facter::ResolvedFact).and \
@@ -56,7 +56,7 @@ describe Facts::Linux::Cloud::Provider do
       end
 
       context 'when Ec2 data does not exist nil is returned' do
-        let(:value) { {} }
+        let(:value) { false }
 
         it 'returns nil' do
           expect(fact.call_the_resolver).to be_an_instance_of(Facter::ResolvedFact).and \
@@ -67,12 +67,12 @@ describe Facts::Linux::Cloud::Provider do
 
     describe 'when on xen' do
       before do
-        allow(Facter::Resolvers::Ec2).to receive(:resolve).with(:metadata).and_return(value)
+        allow(Facter::Resolvers::Ec2).to receive(:resolve).with(:metadata_available).and_return(value)
         allow(Facter::Util::Facts::Posix::VirtualDetector).to receive(:platform).and_return('xen')
       end
 
       describe 'Ec2 data exists and aws fact is set' do
-        let(:value) { { 'some' => 'fact' } }
+        let(:value) { true }
 
         it 'Testing things' do
           expect(fact.call_the_resolver).to be_an_instance_of(Facter::ResolvedFact).and \
@@ -81,7 +81,7 @@ describe Facts::Linux::Cloud::Provider do
       end
 
       context 'when Ec2 data does not exist nil is returned' do
-        let(:value) { {} }
+        let(:value) { false }
 
         it 'returns nil' do
           expect(fact.call_the_resolver).to be_an_instance_of(Facter::ResolvedFact).and \
@@ -92,12 +92,12 @@ describe Facts::Linux::Cloud::Provider do
 
     describe 'when on xenhvm' do
       before do
-        allow(Facter::Resolvers::Ec2).to receive(:resolve).with(:metadata).and_return(value)
+        allow(Facter::Resolvers::Ec2).to receive(:resolve).with(:metadata_available).and_return(value)
         allow(Facter::Util::Facts::Posix::VirtualDetector).to receive(:platform).and_return('xenhvm')
       end
 
       describe 'Ec2 data exists and aws fact is set' do
-        let(:value) { { 'some' => 'fact' } }
+        let(:value) { true }
 
         it 'Testing things' do
           expect(fact.call_the_resolver).to be_an_instance_of(Facter::ResolvedFact).and \
@@ -106,7 +106,7 @@ describe Facts::Linux::Cloud::Provider do
       end
 
       context 'when Ec2 data does not exist nil is returned' do
-        let(:value) { {} }
+        let(:value) { false }
 
         it 'returns nil' do
           expect(fact.call_the_resolver).to be_an_instance_of(Facter::ResolvedFact).and \
@@ -117,12 +117,12 @@ describe Facts::Linux::Cloud::Provider do
 
     describe 'when on gce' do
       before do
-        allow(Facter::Resolvers::Gce).to receive(:resolve).with(:metadata).and_return(value)
+        allow(Facter::Resolvers::Gce).to receive(:resolve).with(:metadata_available).and_return(value)
         allow(Facter::Util::Facts::Posix::VirtualDetector).to receive(:platform).and_return('gce')
       end
 
       describe 'and the "gce" fact has content' do
-        let(:value) { { 'some' => 'metadata' } }
+        let(:value) { true }
 
         it 'resolves a provider of "gce"' do
           expect(fact.call_the_resolver).to be_an_instance_of(Facter::ResolvedFact).and \
@@ -131,7 +131,7 @@ describe Facts::Linux::Cloud::Provider do
       end
 
       context 'when the "gce" fact has no content' do
-        let(:value) { {} }
+        let(:value) { false }
 
         it 'resolves to nil' do
           expect(fact.call_the_resolver).to be_an_instance_of(Facter::ResolvedFact).and \

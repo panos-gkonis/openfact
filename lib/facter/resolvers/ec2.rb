@@ -14,18 +14,28 @@ module Facter
 
         def post_resolve(fact_name, _options)
           log.debug('Querying Ec2 metadata')
-          @fact_list.fetch(fact_name) { read_facts(fact_name) }
+          @fact_list.fetch(fact_name) { read_fact(fact_name) }
         end
 
-        def read_facts(fact_name)
+        def read_fact(fact_name)
+          case fact_name
+          when :metadata
+            read_metadata
+          when :userdata
+            @fact_list[:userdata] = get_data_from(EC2_USERDATA_ROOT_URL).strip.force_encoding('UTF-8')
+          when :metadata_available
+            @fact_list[:metadata_available] = !get_data_from(EC2_METADATA_ROOT_URL).empty?
+          end
+        end
+
+        def read_metadata
+          metadata = get_data_from(EC2_METADATA_ROOT_URL)
+          @fact_list[:metadata_available] = !metadata.empty?
           @fact_list[:metadata] = {}
-          query_for_metadata(EC2_METADATA_ROOT_URL, @fact_list[:metadata])
-          @fact_list[:userdata] = get_data_from(EC2_USERDATA_ROOT_URL).strip.force_encoding('UTF-8')
-          @fact_list[fact_name]
+          query_for_metadata(EC2_METADATA_ROOT_URL, @fact_list[:metadata], metadata)
         end
 
-        def query_for_metadata(url, container)
-          metadata = get_data_from(url)
+        def query_for_metadata(url, container, metadata = get_data_from(url))
           metadata.each_line do |line|
             next if line.empty?
 

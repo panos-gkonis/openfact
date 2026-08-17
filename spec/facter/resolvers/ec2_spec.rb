@@ -49,6 +49,44 @@ describe Facter::Resolvers::Ec2 do
         expect(ec2.resolve(:userdata)).to eql('userdata')
       end
 
+      it 'does not fetch userdata when resolving metadata' do
+        ec2.resolve(:metadata)
+
+        expect(a_request(:get, userdata_uri)).not_to have_been_made
+      end
+
+      it 'does not fetch metadata when resolving userdata' do
+        ec2.resolve(:userdata)
+
+        expect(a_request(:get, metadata_uri)).not_to have_been_made
+      end
+
+      it 'checks metadata availability without recursively fetching metadata' do
+        expect(ec2.resolve(:metadata_available)).to be(true)
+        expect(a_request(:get, "#{metadata_uri}instance_type")).not_to have_been_made
+      end
+
+      it 'caches metadata availability' do
+        2.times { ec2.resolve(:metadata_available) }
+
+        expect(a_request(:get, metadata_uri)).to have_been_made.once
+      end
+
+      it 'sets metadata availability while resolving metadata' do
+        ec2.resolve(:metadata)
+
+        expect(ec2.resolve(:metadata_available)).to be(true)
+        expect(a_request(:get, metadata_uri)).to have_been_made.once
+      end
+
+      it 'fully resolves metadata after checking availability' do
+        ec2.resolve(:metadata_available)
+
+        expect(ec2.resolve(:metadata)).to include('instance_type' => 'c1.medium')
+        expect(a_request(:get, metadata_uri)).to have_been_made.twice
+        expect(a_request(:get, "#{metadata_uri}instance_type")).to have_been_made.once
+      end
+
       it 'parses ec2 network/ directory as a multi-level hash' do
         network_hash = {
           'network' => {
@@ -106,6 +144,10 @@ describe Facter::Resolvers::Ec2 do
 
       it 'returns empty ec2 userdata' do
         expect(ec2.resolve(:userdata)).to eql('')
+      end
+
+      it 'returns false for metadata availability' do
+        expect(ec2.resolve(:metadata_available)).to be(false)
       end
     end
   end
